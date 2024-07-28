@@ -1,14 +1,14 @@
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center bg-[#00193f] text-white p-4">
-    <h1 class="text-4xl font-bold mb-8">Football Player Quiz</h1>
+    <h1 class="text-4xl font-bold mb-8 text-center">Football Player Quiz</h1>
     <div v-if="loading" class="flex items-center justify-center mb-8 animate-pulse">
       <svg class="h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v2m0 10v2m8-10h-2m-2 6h-2m-6-6H4m2 6H4m6-6V4m0 2v2m0 10v2m-8-10h2m2 6h2m6-6h2m2-6h2m-2 6h2m2 0a9 9 0 11-9-9v0a9 9 0 0112 9z" />
       </svg>
     </div>
-    <div v-else class="flex flex-row mb-8 bg-white text-black p-4 rounded-lg shadow-lg">
+    <div v-else class="flex flex-col lg:flex-row mb-8 bg-white text-black p-4 rounded-lg shadow-lg w-full lg:w-auto">
       <!-- Player Info Section -->
-      <div class="flex flex-col items-start mr-8">
+      <div class="flex flex-col items-start mb-4 lg:mb-0 lg:mr-8">
         <div class="flex items-center mb-4">
           <img :src="playerProfile.imageURL" alt="Player Image" :class="{'blur-md': !showPlayerName, 'w-32 h-32 rounded-full mr-4': true}">
           <div>
@@ -57,13 +57,16 @@
       <div class="flex space-x-4 mb-4">
         <button @click="giveHint" class="btn bg-green-500">İpucu</button>
         <button @click="guessPlayer" class="btn bg-blue-500">Tahmin Et</button>
+        <button v-if="passCount > 0" @click="passPlayer" :disabled="passDisabled" class="btn bg-red-500" :class="{'opacity-50 cursor-not-allowed': passDisabled}">Pass</button>
       </div>
+      <button @click="endGame" class="btn bg-gray-500 mt-4">Oyunu Bitir</button>
     </div>
-    <div v-if="showGuessInput" class="mt-4">
-      <input v-model="playerGuess" type="text" placeholder="Futbolcu adını girin" class="text-black p-2 rounded" />
-      <button @click="submitGuess" class="btn bg-yellow-500 mt-2">Tahmini Gönder</button>
+    <div v-if="showGuessInput" class="mt-4 flex flex-col items-center">
+      <input v-model="playerGuess" type="text" placeholder="Futbolcu adını girin" class="text-black p-2 rounded mb-2 w-full lg:w-auto" />
+      <button @click="submitGuess" class="btn bg-yellow-500">Tahmini Gönder</button>
     </div>
     <p class="mt-4">Score: {{ score }}</p>
+    <p v-if="passCount > 0" class="mt-4">Pass Hakkı: {{ passCount }}</p>
   </div>
 </template>
 
@@ -71,6 +74,7 @@
 import { defineComponent, ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
 
 export default defineComponent({
   name: 'GameView',
@@ -84,7 +88,10 @@ export default defineComponent({
     const showPlayerName = ref<boolean>(false);
     const hintsShown = ref<number>(0);
     const loading = ref<boolean>(false);
+    const passCount = ref<number>(3);
+    const passDisabled = ref<boolean>(false);
     const store = useStore();
+    const router = useRouter();
     const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
 
     onMounted(() => {
@@ -129,7 +136,6 @@ export default defineComponent({
         const profileResponse = await axios.get(profileUrl);
         playerProfile.value = profileResponse.data;
 
-        // Yeni oyuncu yüklendiğinde isim ve resim blur olacak
         showPlayerName.value = false;
         hintsShown.value = 0;
       } catch (error) {
@@ -142,6 +148,7 @@ export default defineComponent({
     const giveHint = () => {
       if (hintsShown.value < 4) {
         hintsShown.value++;
+        score.value -= 20;
       }
     };
 
@@ -154,16 +161,39 @@ export default defineComponent({
         alert('Doğru tahmin!');
         score.value += 100;
         showPlayerName.value = true;
-        loading.value = true;
-        await fetchPlayerData();  // Yeni oyuncu bilgilerini almak için istek atılıyor
+
+        if (score.value % 300 === 0) {
+          score.value += 50;
+        }
+
+        setTimeout(async () => {
+          loading.value = true;
+          await fetchPlayerData();
+        }, 5000);
       } else {
         alert('Yanlış tahmin, tekrar deneyin.');
+        score.value -= 10;
       }
       showGuessInput.value = false;
       playerGuess.value = '';
     };
 
-    return { player, playerProfile, playerTransfers, playerGuess, score, showGuessInput, showPlayerName, hintsShown, giveHint, guessPlayer, submitGuess, loading };
+    const passPlayer = async () => {
+      if (passCount.value > 0) {
+        passCount.value--;
+        passDisabled.value = true;
+        setTimeout(() => {
+          passDisabled.value = false;
+        }, 10000);
+        await fetchPlayerData();
+      }
+    };
+
+    const endGame = () => {
+      router.push({ path: '/' });
+    };
+
+    return { player, playerProfile, playerTransfers, playerGuess, score, showGuessInput, showPlayerName, hintsShown, giveHint, guessPlayer, submitGuess, loading, passCount, passPlayer, passDisabled, endGame };
   },
 });
 </script>
