@@ -52,7 +52,6 @@ export default defineComponent({
         'Serie A': 'IT1',
       };
       const leagueId = leagueIdMap[league];
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const apiUrl = `https://transfermarkt-api.fly.dev/competitions/${leagueId}/clubs?season_id=2024`;
       const url =  apiUrl;
 
