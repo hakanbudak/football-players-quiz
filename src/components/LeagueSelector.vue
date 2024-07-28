@@ -43,7 +43,7 @@ export default defineComponent({
     const store = useStore();
 
     const leagues = ref<string[]>([
-      'Süper Lig',
+      'Super Lig',
       'Euro 2024',
       'Premier League',
       'La Liga',
@@ -51,7 +51,7 @@ export default defineComponent({
       'Serie A'
     ]);
 
-    const selectedLeague = ref<string | null>(store.state.selectedLeague || 'Süper Lig');
+    const selectedLeague = ref<string | null>(store.state.selectedLeague || 'Super Lig');
 
     const selectLeague = (league: string) => {
       selectedLeague.value = league;
@@ -61,13 +61,13 @@ export default defineComponent({
 
     onMounted(() => {
       if (!store.state.selectedLeague) {
-        selectLeague('Süper Lig');
+        selectLeague('Super Lig');
       }
     });
 
     const getLeagueIcon = (league: string) => {
       switch (league) {
-        case 'Süper Lig':
+        case 'Super Lig':
           return 'IconSuperLig';
         case 'Euro 2024':
           return 'IconEuro2024';

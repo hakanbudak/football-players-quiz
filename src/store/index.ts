@@ -5,6 +5,8 @@ export default createStore({
         selectedLeague: null,
         mode: 'easy',
         player: null,
+        playerTransfers: [],
+        playerProfile: null,
     },
     mutations: {
         setLeague(state, league) {
@@ -15,6 +17,12 @@ export default createStore({
         },
         setPlayer(state, player) {
             state.player = player;
+        },
+        setPlayerTransfers(state, transfers) {
+            state.playerTransfers = transfers;
+        },
+        setPlayerProfile(state, profile) {
+            state.playerProfile = profile;
         },
     },
     actions: {
@@ -27,10 +35,18 @@ export default createStore({
         setPlayer({ commit }, player) {
             commit('setPlayer', player);
         },
+        setPlayerTransfers({ commit }, transfers) {
+            commit('setPlayerTransfers', transfers);
+        },
+        setPlayerProfile({ commit }, profile) {
+            commit('setPlayerProfile', profile);
+        },
     },
     getters: {
         selectedLeague: (state) => state.selectedLeague,
         mode: (state) => state.mode,
         player: (state) => state.player,
+        playerTransfers: (state) => state.playerTransfers,
+        playerProfile: (state) => state.playerProfile,
     },
 });
