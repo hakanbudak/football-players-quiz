@@ -54,26 +54,26 @@ export default defineComponent({
       const leagueId = leagueIdMap[league];
       const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
       const apiUrl = `https://transfermarkt-api.fly.dev/competitions/${leagueId}/clubs?season_id=2024`;
-      const url = proxyUrl + apiUrl;
+      const url =  apiUrl;
 
       try {
         const response = await axios.get(url);
         const clubs = response.data.clubs;
         const randomClub = clubs[Math.floor(Math.random() * clubs.length)];
 
-        const playersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
+        const playersUrl =  `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
         const playersResponse = await axios.get(playersUrl);
         const players = playersResponse.data.players;
         const randomPlayer = players[Math.floor(Math.random() * players.length)];
 
         await store.dispatch('setPlayer', randomPlayer);
 
-        const transfersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/transfers`;
+        const transfersUrl =  `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/transfers`;
         const transfersResponse = await axios.get(transfersUrl);
         const transfers = transfersResponse.data.transfers.filter((transfer: { date: string | number | Date; }) => new Date(transfer.date).getFullYear() > 2011);
         await store.dispatch('setPlayerTransfers', transfers);
 
-        const profileUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/profile`;
+        const profileUrl =  `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/profile`;
         const profileResponse = await axios.get(profileUrl);
         await store.dispatch('setPlayerProfile', profileResponse.data);
 
