@@ -92,7 +92,7 @@ export default defineComponent({
     const passDisabled = ref<boolean>(false);
     const store = useStore();
     const router = useRouter();
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+    const proxyUrl = 'https://football-player-quiz-fc475c985c9c.herokuapp.com/';
 
     onMounted(() => {
       player.value = store.getters.player;
