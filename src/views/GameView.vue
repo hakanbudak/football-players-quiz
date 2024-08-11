@@ -15,8 +15,8 @@
             <h2 v-if="showPlayerName" class="text-3xl font-bold">{{ player.name }}</h2>
             <h2 v-else class="text-3xl font-bold">?</h2>
             <p>{{ player.nationality ? player.nationality.join(', ') : '?' }}</p>
-            <p>{{ playerProfile.club ? playerProfile.club.name : '?' }}</p>
-            <p>{{ playerProfile.marketValue ? playerProfile.marketValue : '?' }}</p>
+            <p>{{ hintsShown >= 6 ? (playerProfile.club ? playerProfile.club.name : '?') : '?' }}</p>
+            <p>{{ hintsShown >= 5 ? (playerProfile.marketValue ? playerProfile.marketValue : '?') : '?' }}</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4 text-base">
@@ -29,6 +29,28 @@
             <p><strong>D.Yeri:</strong> {{ hintsShown >= 1 ? (playerProfile.placeOfBirth ? playerProfile.placeOfBirth.city + ', ' + playerProfile.placeOfBirth.country : '?') : '?' }}</p>
             <p><strong>Ayak:</strong> {{ player.foot ? player.foot : '?' }}</p>
             <p><strong>Kontrat Sonu:</strong> {{ hintsShown >= 4 ? (playerProfile.club ? playerProfile.club.contractExpires : '?') : '?' }}</p>
+          </div>
+        </div>
+      </div>
+      <div v-if="showGameOver" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div class="bg-white text-black p-6 rounded-lg shadow-lg max-w-lg w-full">
+          <h2 class="text-2xl font-bold mb-4 text-center">Oyun Bitti!</h2>
+          <p class="mb-4 text-center">Skorun: <span class="font-bold">{{ score }}</span></p>
+          <p class="mb-4 text-center">Ne yazık ki 3 yanlış tahmin yaptın.</p>
+          <div class="flex justify-center">
+            <button @click="restartGame" class="btn bg-red-500 text-white px-4 py-2 rounded">Tekrar Oyna</button>
+          </div>
+        </div>
+      </div>
+      <div v-if="showPopup" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+        <div class="bg-white text-black p-6 rounded-lg shadow-lg max-w-lg w-full">
+          <h2 class="text-2xl font-bold mb-4 text-center">Tebrikler!</h2>
+          <p class="mb-4 text-center">Skorun: <span class="font-bold">{{ score }}</span></p>
+          <p class="mb-4 text-center">{{ playerProfile.name }} isimli oyuncuyu doğru bildin!</p>
+          <p class="mb-4 text-center">Puan Durumu: {{ score }}</p>
+          <p class="mb-4 text-center">Kalan Hakkın: {{ passCount }}</p>
+          <div class="flex justify-center">
+            <button @click="closePopup" class="btn bg-blue-500 text-white px-4 py-2 rounded">Devam Et</button>
           </div>
         </div>
       </div>
@@ -83,6 +105,7 @@ export default defineComponent({
     const playerProfile = ref<any>({});
     const playerTransfers = ref<any[]>([]);
     const playerGuess = ref<string>('');
+    const wrongGuessCount = ref<number>(0);
     const score = ref<number>(0);
     const showGuessInput = ref<boolean>(false);
     const showPlayerName = ref<boolean>(false);
@@ -90,6 +113,8 @@ export default defineComponent({
     const loading = ref<boolean>(false);
     const passCount = ref<number>(3);
     const passDisabled = ref<boolean>(false);
+    const showPopup = ref<boolean>(false);
+    const showGameOver = ref<boolean>(false);
     const store = useStore();
     const router = useRouter();
     const proxyUrl = 'https://football-player-quiz-fc475c985c9c.herokuapp.com/';
@@ -146,7 +171,7 @@ export default defineComponent({
     };
 
     const giveHint = () => {
-      if (hintsShown.value < 4) {
+      if (hintsShown.value < 6) {
         hintsShown.value++;
         score.value -= 20;
       }
@@ -166,18 +191,27 @@ export default defineComponent({
           score.value += 50;
         }
 
-        setTimeout(async () => {
-          loading.value = true;
-          await fetchPlayerData();
-        }, 5000);
+        showPopup.value = true;
+        wrongGuessCount.value = 0;
       } else {
         alert('Yanlış tahmin, tekrar deneyin.');
         score.value -= 10;
+        wrongGuessCount.value++;
       }
       showGuessInput.value = false;
       playerGuess.value = '';
-    };
 
+      if (wrongGuessCount.value >= 3) {
+        showGameOver.value = true;
+      }
+    };
+    const closePopup = async () => {
+      showPopup.value = false;
+      await fetchPlayerData();
+    };
+    const restartGame = () => {
+      router.push({ path: '/' });
+    };
     const passPlayer = async () => {
       if (passCount.value > 0) {
         passCount.value--;
@@ -193,7 +227,7 @@ export default defineComponent({
       router.push({ path: '/' });
     };
 
-    return { player, playerProfile, playerTransfers, playerGuess, score, showGuessInput, showPlayerName, hintsShown, giveHint, guessPlayer, submitGuess, loading, passCount, passPlayer, passDisabled, endGame };
+    return { player, playerProfile, playerTransfers, playerGuess, score, showGuessInput, showPlayerName, hintsShown, giveHint, guessPlayer, submitGuess, loading, passCount, passPlayer, passDisabled, endGame, showPopup, closePopup, showGameOver, restartGame, wrongGuessCount };
   },
 });
 </script>
