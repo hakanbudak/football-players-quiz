@@ -115,6 +115,8 @@ export default defineComponent({
     const passDisabled = ref<boolean>(false);
     const showPopup = ref<boolean>(false);
     const showGameOver = ref<boolean>(false);
+    const selectedPlayers = new Set<string>();
+
     const store = useStore();
     const router = useRouter();
     const proxyUrl = 'https://football-player-quiz-fc475c985c9c.herokuapp.com/';
@@ -143,32 +145,76 @@ export default defineComponent({
 
         const response = await axios.get(url);
         const clubs = response.data.clubs;
-        const randomClub = clubs[Math.floor(Math.random() * clubs.length)];
+        let filteredClubs = clubs;
 
-        const playersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
-        const playersResponse = await axios.get(playersUrl);
-        const players = playersResponse.data.players;
-        const randomPlayer = players[Math.floor(Math.random() * players.length)];
+        if (league === 'Super Lig') {
+          const superLigTeams = [
+            { id: "36", name: "Fenerbahce" },
+            { id: "141", name: "Galatasaray" },
+            { id: "114", name: "Besiktas JK" },
+            { id: "449", name: "Trabzonspor" },
+            { id: "6890", name: "Basaksehir FK" },
+          ];
+          filteredClubs = clubs.filter((club: { id: string }) =>
+              superLigTeams.some(team => team.id === club.id)
+          );
+        }
 
-        player.value = randomPlayer;
+        if (filteredClubs.length === 0) {
+          console.log('No clubs found for the selected league.');
+          return;
+        }
 
-        const transfersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/transfers`;
-        const transfersResponse = await axios.get(transfersUrl);
-        const transfers = transfersResponse.data.transfers.filter((transfer: { date: string | number | Date; }) => new Date(transfer.date).getFullYear() > 2011);
-        playerTransfers.value = transfers;
+        let selectedPlayer = null;
+        let clubIndex = 0;
 
-        const profileUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/profile`;
-        const profileResponse = await axios.get(profileUrl);
-        playerProfile.value = profileResponse.data;
+        while (!selectedPlayer && clubIndex < filteredClubs.length) {
+          const randomClub = filteredClubs[clubIndex];
 
-        showPlayerName.value = false;
-        hintsShown.value = 0;
+          const playersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
+          const playersResponse = await axios.get(playersUrl);
+          const players = playersResponse.data.players;
+
+          const filteredPlayers = players.filter((player: { marketValue: string, id: string }) => {
+            const marketValueStr = player.marketValue.replace('€', '').replace('m', '').replace('k', '');
+            const multiplier = player.marketValue.includes('m') ? 1_000_000 : player.marketValue.includes('k') ? 1_000 : 1;
+            const marketValue = parseFloat(marketValueStr) * multiplier;
+            return marketValue > 5_000_000 && !selectedPlayers.has(player.id);
+          });
+
+          if (filteredPlayers.length > 0) {
+            selectedPlayer = filteredPlayers[Math.floor(Math.random() * filteredPlayers.length)];
+            selectedPlayers.add(selectedPlayer.id);
+          }
+
+          clubIndex++;
+        }
+
+        if (selectedPlayer) {
+          player.value = selectedPlayer;
+
+          const transfersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${selectedPlayer.id}/transfers`;
+          const transfersResponse = await axios.get(transfersUrl);
+          const transfers = transfersResponse.data.transfers.filter((transfer: { date: string | number | Date; }) => new Date(transfer.date).getFullYear() > 2011);
+          playerTransfers.value = transfers;
+
+          const profileUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${selectedPlayer.id}/profile`;
+          const profileResponse = await axios.get(profileUrl);
+          playerProfile.value = profileResponse.data;
+
+          showPlayerName.value = false;
+          hintsShown.value = 0;
+        } else {
+          console.log('No player found with a market value above 5 million euros.');
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
         loading.value = false;
       }
     };
+
+
 
     const giveHint = () => {
       if (hintsShown.value < 6) {

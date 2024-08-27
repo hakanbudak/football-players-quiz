@@ -42,7 +42,6 @@ export default defineComponent({
       const league = store.getters.selectedLeague;
       const mode = store.getters.mode;
 
-      // Lig takımlarını getiren API isteği
       const leagueIdMap: { [key: string]: string } = {
         'Super Lig': 'TR1',
         'Euro 2024': 'EM24',
@@ -59,26 +58,66 @@ export default defineComponent({
       try {
         const response = await axios.get(url);
         const clubs = response.data.clubs;
-        const randomClub = clubs[Math.floor(Math.random() * clubs.length)];
+        let filteredClubs = clubs;
 
-        const playersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
-        const playersResponse = await axios.get(playersUrl);
-        const players = playersResponse.data.players;
-        const randomPlayer = players[Math.floor(Math.random() * players.length)];
+        if (league === 'Super Lig') {
+          const superLigTeams = [
+            { id: "36", name: "Fenerbahce" },
+            { id: "141", name: "Galatasaray" },
+            { id: "114", name: "Besiktas JK" },
+            { id: "449", name: "Trabzonspor" },
+            { id: "6890", name: "Basaksehir FK" },
+          ];
+          filteredClubs = clubs.filter((club: { id: string }) =>
+              superLigTeams.some(team => team.id === club.id)
+          );
+        }
 
-        await store.dispatch('setPlayer', randomPlayer);
+        if (filteredClubs.length === 0) {
+          console.log('No clubs found for the selected league.');
+          return;
+        }
 
-        const transfersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/transfers`;
-        const transfersResponse = await axios.get(transfersUrl);
-        const transfers = transfersResponse.data.transfers.filter((transfer: { date: string | number | Date; }) => new Date(transfer.date).getFullYear() > 2011);
-        await store.dispatch('setPlayerTransfers', transfers);
+        let selectedPlayer = null;
+        let clubIndex = 0;
 
-        const profileUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${randomPlayer.id}/profile`;
-        const profileResponse = await axios.get(profileUrl);
-        await store.dispatch('setPlayerProfile', profileResponse.data);
+        while (!selectedPlayer && clubIndex < filteredClubs.length) {
+          const randomClub = filteredClubs[clubIndex];
 
-        console.log(`Starting game with league: ${league}, mode: ${mode}, team: ${randomClub.name}, player: ${randomPlayer.name}`);
-        console.log(`Meraklı arkadasım oyunu kurallarına gore oyna :)`);
+          const playersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/clubs/${randomClub.id}/players?season_id=2024`;
+          const playersResponse = await axios.get(playersUrl);
+          const players = playersResponse.data.players;
+
+          const filteredPlayers = players.filter((player: { marketValue: string }) => {
+            const marketValueStr = player.marketValue.replace('€', '').replace('m', '').replace('k', '');
+            const multiplier = player.marketValue.includes('m') ? 1_000_000 : player.marketValue.includes('k') ? 1_000 : 1;
+            const marketValue = parseFloat(marketValueStr) * multiplier;
+            return marketValue > 5_000_000;
+          });
+
+          if (filteredPlayers.length > 0) {
+            selectedPlayer = filteredPlayers[Math.floor(Math.random() * filteredPlayers.length)];
+          }
+
+          clubIndex++;
+        }
+
+        if (selectedPlayer) {
+          await store.dispatch('setPlayer', selectedPlayer);
+
+          const transfersUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${selectedPlayer.id}/transfers`;
+          const transfersResponse = await axios.get(transfersUrl);
+          const transfers = transfersResponse.data.transfers.filter((transfer: { date: string | number | Date; }) => new Date(transfer.date).getFullYear() > 2011);
+          await store.dispatch('setPlayerTransfers', transfers);
+
+          const profileUrl = proxyUrl + `https://transfermarkt-api.fly.dev/players/${selectedPlayer.id}/profile`;
+          const profileResponse = await axios.get(profileUrl);
+          await store.dispatch('setPlayerProfile', profileResponse.data);
+
+          console.log(`Starting game with league: ${league}, mode: ${mode}, player: ${selectedPlayer.name}`);
+        } else {
+          console.log('No player found with a market value above 5 million euros.');
+        }
 
         await router.push('/game');
       } catch (error) {
@@ -87,6 +126,8 @@ export default defineComponent({
         loading.value = false;
       }
     };
+
+
 
     return { startGame, loading };
   },
