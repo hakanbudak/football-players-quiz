@@ -1,24 +1,3 @@
-# football-player-quiz
+<img width="1437" alt="image" src="https://github.com/user-attachments/assets/0f98dc03-d018-4dc6-b9be-a741207e06ea">
 
-## Project setup
-```
-npm install
-```
-
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+<img width="1440" alt="image" src="https://github.com/user-attachments/assets/3889d183-7f4d-465a-b673-d3ef072de7bc">
