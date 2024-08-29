@@ -8,7 +8,7 @@
     </div>
     <div v-else class="flex flex-col lg:flex-row mb-8 bg-white text-black p-4 rounded-lg shadow-lg w-full lg:w-auto">
       <!-- Player Info Section -->
-      <div class="flex flex-col items-start mb-4 lg:mb-0 lg:mr-8">
+      <div class="flex flex-col items-start mb-4 lg:mb-0 lg:mr-8 sm:scale-90 sm:transform sm:origin-top">
         <div class="flex items-center mb-4">
           <img :src="playerProfile.imageURL" alt="Player Image" :class="{'blur-md': !showPlayerName, 'w-32 h-32 rounded-full mr-4': true}">
           <div>
@@ -78,14 +78,20 @@
     <div class="flex flex-col items-center">
       <div class="flex space-x-4 mb-4">
         <button @click="giveHint" class="btn bg-green-500">İpucu</button>
-        <button @click="guessPlayer" class="btn bg-blue-500">Tahmin Et</button>
         <button v-if="passCount > 0" @click="passPlayer" :disabled="passDisabled" class="btn bg-red-500" :class="{'opacity-50 cursor-not-allowed': passDisabled}">Pass</button>
       </div>
-      <button @click="endGame" class="btn bg-gray-500 mt-4">Oyunu Bitir</button>
-    </div>
-    <div v-if="showGuessInput" class="mt-4 flex flex-col items-center">
-      <input v-model="playerGuess" type="text" placeholder="Futbolcu adını girin" class="text-black p-2 rounded mb-2 w-full lg:w-auto" />
-      <button @click="submitGuess" class="btn bg-yellow-500">Tahmini Gönder</button>
+      <div class="mb-4 w-full flex justify-center">
+        <template v-if="!showGuessInput">
+          <button @click="guessPlayer" class="btn bg-blue-500 w-full">Tahmin Et</button>
+        </template>
+        <template v-else>
+          <div class="flex w-full max-w-md space-x-2">
+            <input v-model="playerGuess" type="text" placeholder="Futbolcu adını girin" class="text-black p-2 rounded transition-all duration-300 flex-grow" />
+            <button @click="submitGuess" class="btn bg-yellow-500">Gönder</button>
+          </div>
+        </template>
+      </div>
+      <button @click="endGame" class="btn bg-gray-500 mt-4 w-full">Oyunu Bitir</button>
     </div>
     <p class="mt-4">Score: {{ score }}</p>
     <p v-if="passCount > 0" class="mt-4">Pass Hakkı: {{ passCount }}</p>
